@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Sport Olympic Medal Count</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+        #main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+            position: relative;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+            user-select: none; /* Prevent text selection */
+        }
+        th:hover {
+            background-color: #e0e0e0;
+        }
+        .sport-checkbox, .sport-category {
+            display: block;
+            margin-bottom: 10px;
+        }
+        h1, h2 {
+            margin-top: 0;
+        }
+        .select-buttons {
+            margin-bottom: 15px;
+        }
+        .select-buttons button {
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+        .cell-background {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: rgba(0, 123, 255, 0.2);
+            z-index: -1;
+        }
+        .sort-arrow {
+            display: inline-block;
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>Sports</h2>
+        <div class="select-buttons">
+            <button onclick="selectAll()">Select All</button>
+            <button onclick="deselectAll()">Deselect All</button>
+            <button onclick="selectCategory('real')">Real Sports</button>
+            <button onclick="selectCategory('not-real')">Not Real Sports</button>
+        </div>
+        <div id="sportFilters"></div>
+    </div>
+    <div id="main-content">
+        <h1>Real Sport Olympic Medal Count</h1>
+        <table id="medalTable">
+            <tr>
+                <th onclick="sortTable(0)">Country<span class="sort-arrow">↕</span></th>
+                <th onclick="sortTable(1)">Gold<span class="sort-arrow">↕</span></th>
+                <th onclick="sortTable(2)">Silver<span class="sort-arrow">↕</span></th>
+                <th onclick="sortTable(3)">Bronze<span class="sort-arrow">↕</span></th>
+                <th onclick="sortTable(4)">Total<span class="sort-arrow">↕</span></th>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        let medalData = {}; // Should be Country -> sport -> [gold, silver, bronze]
+    
+
+        async function fetchMedalData() {
+            const response = await fetch('https://en.wikipedia.org/w/api.php?action=parse&formatversion=2&page=List_of_2024_Summer_Olympics_medal_winners&prop=text&format=json&origin=*');
+            
+            // Interpret the response as JSON and extract the value of the parse key and then the text key within that
+            const data = await response.json();
+            const text = data.parse.text;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            
+            // Get all the tables that come after an H3 containing Medal Table
+            const tables = [];
+            doc.querySelectorAll('h3').forEach(h3 => {
+                if (h3.textContent.includes("Medal table")) {
+                    let parent = h3.parentNode;
+
+                    // Find the first table in the parent and add it to tables
+                    let nextElement = parent.nextSibling;
+                    while (nextElement && nextElement.tagName !== 'TABLE') {
+                        nextElement = nextElement.nextElementSibling;
+                    }
+                    if (nextElement && nextElement.tagName === 'TABLE') {
+                        tables.push(nextElement);
+                    }
+                }
+            });
+
+            tables.forEach(table => {
+                // To get the sport name, find the sibling before the table with the class mw-heading2
+                let sportName = "";
+                let previousElement = table.previousElementSibling;
+                while (previousElement && !previousElement.classList.contains('mw-heading2')) {
+                    previousElement = previousElement.previousElementSibling;
+                }
+                if (previousElement && previousElement.classList.contains('mw-heading2')) {
+                    sportName = previousElement.querySelector('h2').textContent.trim();
+                }
+                
+                // Exclude rows with class sortbottom (footer)
+                const countries = table.querySelectorAll('tbody tr');
+                const validRows = Array.from(countries).slice(1, -1); // Exclude first and last row
+    
+                validRows.forEach(row => {
+                    //cells are either td or th
+                    let cells = row.querySelectorAll('td, th');
+                    
+                    if (cells[0].tagName === 'TD') {
+                        cells = Array.from(cells).slice(1); // Exclude the first cell if it's a td
+                    }
+
+                    if (cells.length > 0) {
+                        const countryName = cells[0].textContent.trim();
+                        if (countryName.includes("Rank") || countryName.includes("Total")) {
+                            return;
+                        }
+                        if (!medalData[countryName]) {
+                            medalData[countryName] = {};
+                        }
+                        // Convert to int
+                        medalData[countryName][sportName] = [parseInt(cells[1].textContent.trim()), parseInt(cells[2].textContent.trim()), parseInt(cells[3].textContent.trim())]; // Gold, Silver, Bronze
+                    }
+                });
+            });
+    }
+
+        fetchMedalData().then(() => {
+            sports = [...new Set(Object.values(medalData).flatMap(Object.keys))];
+            realSports = ['Judo', 'Swimming', 'Cycling', 'Rugby sevens', 'Triathlon', 'Athletics', 'Diving', 'Gymnastics', 'Tennis', 'Rowing', 'Boxing'];
+            notRealSports = sports.filter(sport => !realSports.includes(sport));
+
+            createSportCheckboxes();
+            updateTable();
+            sortTable(1, false); // Initially sort by gold medals
+            selectCategory('real');
+        });
+        
+        let sports = [...new Set(Object.values(medalData).flatMap(Object.keys))];
+        let realSports = ['Judo', 'Swimming', 'Cycling', 'Rugby sevens', 'Triathlon', 'Athletics', 'Diving', 'Gymnastics', 'Tennis', 'Rowing', 'Boxing'];
+        let notRealSports = sports.filter(sport => !realSports.includes(sport));
+
+        let currentSortColumn = 1; // Start sorted by gold medals
+        let currentSortDirection = 'desc';
+
+        function createSportCheckboxes() {
+            const container = document.getElementById('sportFilters');
+            sports.forEach(sport => {
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.classList.add('sport-checkbox');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = sport;
+                checkbox.checked = true;
+                checkbox.addEventListener('change', () => {
+                    updateTable();
+                    sortTable(currentSortColumn, false);
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = sport;
+                label.textContent = sport;
+
+                checkboxContainer.appendChild(checkbox);
+                checkboxContainer.appendChild(label);
+                container.appendChild(checkboxContainer);
+            });
+        }
+
+        function updateTable() {
+            const table = document.getElementById('medalTable');
+            
+            // Clear existing rows except header
+            while (table.rows.length > 1) {
+                table.deleteRow(1);
+            }
+
+            const selectedSports = sports.filter(sport => document.getElementById(sport).checked);
+
+            let maxValues = [0, 0, 0, 0]; // Max values for Gold, Silver, Bronze, Total
+
+            const countryData = [];
+
+            for (const [country, medals] of Object.entries(medalData)) {
+                const totalMedals = [0, 0, 0];
+                
+                selectedSports.forEach(sport => {
+                    if (medals[sport]) {
+                        medals[sport].forEach((count, index) => {
+                            totalMedals[index] += count;
+                        });
+                    }
+                });
+                
+                const total = totalMedals.reduce((a, b) => a + b, 0);
+                countryData.push([country, ...totalMedals, total]);
+
+                // Update max values
+                for (let i = 0; i < 4; i++) {
+                    maxValues[i] = Math.max(maxValues[i], i < 3 ? totalMedals[i] : total);
+                }
+            }
+
+            countryData.forEach(data => {
+                const row = table.insertRow();
+                data.forEach((value, index) => {
+                    const cell = row.insertCell();
+                    cell.textContent = value;
+                    if (index > 0) { // Skip country name
+                        const percentage = (value / maxValues[index - 1]) * 100;
+                        const background = document.createElement('div');
+                        background.className = 'cell-background';
+                        background.style.width = `${percentage}%`;
+                        cell.appendChild(background);
+                    }
+                });
+            });
+        }
+
+        function selectAll() {
+            sports.forEach(sport => {
+                document.getElementById(sport).checked = true;
+            });
+            updateTable();
+            sortTable(currentSortColumn, false);
+        }
+
+        function deselectAll() {
+            sports.forEach(sport => {
+                document.getElementById(sport).checked = false;
+            });
+            updateTable();
+            sortTable(currentSortColumn, false);
+        }
+
+        function selectCategory(category) {
+            const sportsToSelect = category === 'real' ? realSports : notRealSports;
+            sports.forEach(sport => {
+                document.getElementById(sport).checked = sportsToSelect.includes(sport);
+            });
+            updateTable();
+            sortTable(currentSortColumn, false);
+        }
+
+        function sortTable(n, toggle = true) {
+            const table = document.getElementById("medalTable");
+            
+            // Remove all existing sort arrows
+            document.querySelectorAll('.sort-arrow').forEach(arrow => {
+                arrow.textContent = '↕';
+            });
+            
+            // Add the appropriate sort arrow to the clicked column
+            const arrow = table.rows[0].getElementsByTagName("TH")[n].querySelector('.sort-arrow');
+            
+            if (currentSortColumn === n) {
+                if (toggle) {
+                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                }
+            } else {
+                currentSortColumn = n;
+                currentSortDirection = 'desc';
+            }
+            
+            const rows = Array.from(table.rows).slice(1);
+            rows.sort((a, b) => {
+                const aValue = a.cells[n].textContent;
+                const bValue = b.cells[n].textContent;
+                
+                if (n === 0) {
+                    return currentSortDirection === 'asc' ? 
+                        aValue.localeCompare(bValue) : 
+                        bValue.localeCompare(aValue);
+                } else {
+                    return currentSortDirection === 'asc' ? 
+                        Number(aValue) - Number(bValue) : 
+                        Number(bValue) - Number(aValue);
+                }
+            });
+            
+            rows.forEach(row => table.tBodies[0].appendChild(row));
+            
+            // Update the sort arrow
+            arrow.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+        }
+    </script>
+</body>
+</html>
