@@ -4,58 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real Sport Olympic Medal Count</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            display: flex;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
         #sidebar {
-            width: 200px;
-            background-color: #f0f0f0;
-            padding: 20px;
-            height: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 25px;
+            background-color: #f8f9fa;
             overflow-y: auto;
         }
         #main-content {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-            position: relative;
-        }
-        th {
-            background-color: #f2f2f2;
-            cursor: pointer;
-            user-select: none; /* Prevent text selection */
-        }
-        th:hover {
-            background-color: #e0e0e0;
-        }
-        .sport-checkbox, .sport-category {
-            display: block;
-            margin-bottom: 10px;
-        }
-        h1, h2 {
-            margin-top: 0;
-        }
-        .select-buttons {
-            margin-bottom: 15px;
-        }
-        .select-buttons button {
-            margin-right: 10px;
-            margin-bottom: 5px;
+            margin-left: 0;
+            padding-top: 25px;
         }
         .cell-background {
             position: absolute;
@@ -63,38 +25,76 @@
             top: 0;
             height: 100%;
             background-color: rgba(0, 123, 255, 0.2);
-            z-index: -1;
+                z-index: 0;
+            }
+        td {
+            position: relative;
         }
-        .sort-arrow {
-            display: inline-block;
-            margin-left: 5px;
-            font-size: 0.8em;
+        th {
+            user-select: none;
+        }
+        @media (min-width: 768px) {
+            #sidebar {
+                width: 250px;
+            }
+            #main-content {
+                margin-left: 250px;
+            }
+        }
+
+        .sport-checkbox input {
+            margin-right: 5px; /* Adds padding to the right of the button */
+        }
+        .sport-checkbox label {
+            user-select: none;
         }
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <h2>Sports</h2>
-        <div class="select-buttons">
-            <button onclick="selectAll()">Select All</button>
-            <button onclick="deselectAll()">Deselect All</button>
-            <button onclick="selectCategory('real')">Real Sports</button>
-            <button onclick="selectCategory('not-real')">Not Real Sports</button>
+    <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
         </div>
-        <div id="sportFilters"></div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light collapse">
+                <div class="position-sticky pt-3">
+                    <h2 class="h5">Sports</h2>
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-success me-1 mb-1" onclick="selectCategory('real')">Real Sports</button>
+                        <button class="btn btn-sm btn-outline-danger me-1 mb-1" onclick="selectCategory('not-real')">Not Real Sports</button>
+                        <button class="btn btn-sm btn-outline-primary me-1 mb-1" onclick="selectAll()">Select All</button>
+                        <button class="btn btn-sm btn-outline-secondary me-1 mb-1" onclick="deselectAll()">Deselect All</button>
+                    </div>
+                    <div id="sportFilters"></div>
+                </div>
+            </nav>
+
+            <main id="main-content" class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <h1 class="mt-2">Real Sport Olympic Medal Count</h1>
+                <div class="table-responsive">
+                    <table id="medalTable" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Country<span class="sort-arrow">↕</span></th>
+                                <th onclick="sortTable(1)">Gold<span class="sort-arrow">↕</span></th>
+                                <th onclick="sortTable(2)">Silver<span class="sort-arrow">↕</span></th>
+                                <th onclick="sortTable(3)">Bronze<span class="sort-arrow">↕</span></th>
+                                <th onclick="sortTable(4)">Total<span class="sort-arrow">↕</span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
     </div>
-    <div id="main-content">
-        <h1>Real Sport Olympic Medal Count</h1>
-        <table id="medalTable">
-            <tr>
-                <th onclick="sortTable(0)">Country<span class="sort-arrow">↕</span></th>
-                <th onclick="sortTable(1)">Gold<span class="sort-arrow">↕</span></th>
-                <th onclick="sortTable(2)">Silver<span class="sort-arrow">↕</span></th>
-                <th onclick="sortTable(3)">Bronze<span class="sort-arrow">↕</span></th>
-                <th onclick="sortTable(4)">Total<span class="sort-arrow">↕</span></th>
-            </tr>
-        </table>
-    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         let medalData = {}; // Should be Country -> sport -> [gold, silver, bronze]
@@ -151,7 +151,11 @@
                     }
 
                     if (cells.length > 0) {
-                        const countryName = cells[0].textContent.trim();
+                        let countryName = cells[0].textContent.trim();
+                        countryName = countryName.replace(/[\*\(\[].*?[\)\]]/g, '').trim();
+                        countryName = countryName.replace(/[^a-zA-Z0-9 \-]/g, '');
+                        
+                        // Skip rows with Rank or Total
                         if (countryName.includes("Rank") || countryName.includes("Total")) {
                             return;
                         }
@@ -166,7 +170,7 @@
     }
 
         fetchMedalData().then(() => {
-            sports = [...new Set(Object.values(medalData).flatMap(Object.keys))];
+            sports = [...new Set(Object.values(medalData).flatMap(Object.keys))].sort();
             realSports = ['Judo', 'Swimming', 'Cycling', 'Rugby sevens', 'Triathlon', 'Athletics', 'Diving', 'Gymnastics', 'Tennis', 'Rowing', 'Boxing'];
             notRealSports = sports.filter(sport => !realSports.includes(sport));
 
@@ -176,7 +180,7 @@
             selectCategory('real');
         });
         
-        let sports = [...new Set(Object.values(medalData).flatMap(Object.keys))];
+        let sports = [...new Set(Object.values(medalData).flatMap(Object.keys))].sort();
         let realSports = ['Judo', 'Swimming', 'Cycling', 'Rugby sevens', 'Triathlon', 'Athletics', 'Diving', 'Gymnastics', 'Tennis', 'Rowing', 'Boxing'];
         let notRealSports = sports.filter(sport => !realSports.includes(sport));
 
