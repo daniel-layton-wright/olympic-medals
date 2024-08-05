@@ -480,6 +480,15 @@
             // Update the sort arrow
             arrow.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+
+            // Listen for the show.bs.offcanvas event
+            sidebar.addEventListener('show.bs.offcanvas', function () {
+                sidebar.scrollTop = 0; // Reset scroll position to the top
+            });
+        });
     </script>
 </body>
 </html>
