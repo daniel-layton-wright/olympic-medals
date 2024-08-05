@@ -291,7 +291,8 @@
 
         fetchMedalData().then(() => {
             sports = [...new Set(Object.values(medalData).flatMap(Object.keys))].sort();
-            realSports = ['Judo', 'Swimming', 'Cycling', 'Rugby sevens', 'Triathlon', 'Athletics', 'Diving', 'Gymnastics', 'Tennis', 'Rowing', 'Boxing'];
+            realSports = ['Swimming', 'Cycling', 'Rugby sevens', 'Triathlon', 'Athletics', 'Diving', 'Gymnastics', 'Tennis', 'Rowing', 'Boxing',
+                          'Basketball', 'Volleyball', 'Water polo', 'Weightlifting', 'Wrestling', 'Football'];
             notRealSports = sports.filter(sport => !realSports.includes(sport));
 
             createSportCheckboxes();
