@@ -58,13 +58,13 @@
             #sidebar {
                 position: fixed;
                 width: 250px;
-                transform: translateX(0);
-                transition: transform 0.3s ease-in-out;
+                transform: none;
+                transition: none;
             }
             #main-content {
                 margin-left: 250px;
                 width: calc(100% - 250px);
-                transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+                        transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
                     }
         }
 
@@ -113,7 +113,7 @@
                     <h5 class="offcanvas-title">Sports</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
                 </div>
-                <div class="offcanvas-body d-flex flex-column">
+                <div class="d-flex flex-column">
                     <div class="sidebar-buttons mb-3">
                         <button class="btn btn-sm btn-outline-success me-1 mb-1" onclick="selectCategory('real')">Real Sports</button>
                         <button class="btn btn-sm btn-outline-danger me-1 mb-1" onclick="selectCategory('not-real')">Not Real Sports</button>
