@@ -152,6 +152,19 @@
             }
 
         }
+
+        .gold {
+            background-color: gold;
+        }
+
+        .silver {
+            background-color: silver;
+        }
+
+        .bronze {
+            background-color: #CD7F32;
+        }
+
             
     </style>
 </head>
@@ -379,16 +392,19 @@
                     if (index > 0) { // Skip country name
                         cell.classList.add('medal-column');
                         const percentage = (value / maxValues[index - 1]) * 100;
+                        const color = index === 1 ? 'gold' : index === 2 ? 'silver' : index === 3 ? '#CD7F32' : 'rgba(0, 123, 255, 0.2)';
                         const background = document.createElement('div');
+
                         background.className = 'cell-background';
                         background.style.width = `${percentage}%`;
+                        background.style.background = color;
+                        background.style.opacity = "0.3";
                         cell.appendChild(background);
 
                         const background2 = document.createElement('div');
                         background2.className = 'cell-background';
                         
                         // Use gradient for small screens
-                        const color = index === 1 ? 'gold' : index === 2 ? 'silver' : index === 3 ? '#CD7F32' : 'rgba(0, 123, 255, 0.2)';
                         background2.style.background = `${color}`;
                         background2.style.opacity = `${percentage}%`;
                         
