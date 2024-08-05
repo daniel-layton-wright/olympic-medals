@@ -442,17 +442,31 @@
             
             const rows = Array.from(table.rows).slice(1);
             rows.sort((a, b) => {
-                const aValue = a.cells[n].textContent;
-                const bValue = b.cells[n].textContent;
+                const aValue = Number(a.cells[n].textContent);
+                const bValue = Number(b.cells[n].textContent);
                 
-                if (n === 0) {
+                if (n === 0) { // Sorting by country name
                     return currentSortDirection === 'asc' ? 
                         aValue.localeCompare(bValue) : 
                         bValue.localeCompare(aValue);
-                } else {
-                    return currentSortDirection === 'asc' ? 
-                        Number(aValue) - Number(bValue) : 
-                        Number(bValue) - Number(aValue);
+                } else { // Sorting by medal counts
+                    if (aValue !== bValue) {
+                        return currentSortDirection === 'asc' ? 
+                            aValue - bValue : 
+                            bValue - aValue;
+                    } else { // Use other medal columns as tie-breakers
+                        const tieBreakerOrder = [1, 2, 3, 4].filter(index => index !== n); // Exclude the current column
+                        for (let index of tieBreakerOrder) {
+                            const aTieValue = Number(a.cells[index].textContent);
+                            const bTieValue = Number(b.cells[index].textContent);
+                            if (aTieValue !== bTieValue) {
+                                return currentSortDirection === 'asc' ? 
+                                    aTieValue - bTieValue : 
+                                    bTieValue - aTieValue;
+                            }
+                        }
+                        return 0; // All values are equal
+                    }
                 }
             });
             
